@@ -1,0 +1,192 @@
+/* ─── App.css — Premium lesson UI ─── */
+
+/* Layout */
+.app { max-width: 1060px; margin: 0 auto; padding: 1.5rem; }
+
+/* Hero */
+.hero { text-align: center; padding: 3rem 1rem 2rem; }
+.badge {
+  display: inline-block; padding: 0.3rem 1rem; border-radius: 20px;
+  background: rgba(79,195,247,0.12); color: #4fc3f7;
+  font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem;
+}
+.hero h1 { font-size: 2.6rem; margin: 0 0 0.5rem; color: #f0f4ff; }
+.grad {
+  background: linear-gradient(135deg, #4fc3f7, #7c4dff);
+  background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
+}
+.sub { color: #9eafc0; font-size: 1.15rem; }
+
+/* Grid */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  grid-template-rows: auto auto;
+  gap: 1rem;
+}
+.code-panel { grid-row: 1 / 3; }
+.anim-panel { grid-column: 2; }
+.out-panel  { grid-column: 2; }
+
+@media (max-width: 780px) {
+  .grid { grid-template-columns: 1fr; }
+  .code-panel, .anim-panel, .out-panel { grid-column: 1; grid-row: auto; }
+}
+
+/* Panel */
+.panel {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.ph {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-weight: 600; font-size: 0.9rem; color: #c8d6e5;
+}
+.cc { margin-left: auto; font-size: 0.85rem; color: #ffd700; }
+
+/* Code editor */
+.code-area { padding: 0.75rem; }
+.code-input {
+  display: block; width: 100%; min-height: 120px;
+  font-family: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  font-size: 0.9rem; line-height: 1.7;
+  padding: 0.75rem; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px; background: rgba(0,0,0,0.3); color: #e8f0fe;
+  resize: vertical; outline: none;
+  transition: border-color 0.2s;
+}
+.code-input:focus { border-color: #4fc3f7; }
+.code-display {
+  margin: 0; font-family: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  font-size: 0.9rem; line-height: 1.7; padding: 0.5rem 0;
+}
+
+/* Code lines */
+.cl {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 2px 0.5rem; border-radius: 6px;
+  transition: background 0.25s;
+}
+.cl-active {
+  background: rgba(79,195,247,0.15);
+  box-shadow: inset 3px 0 0 #4fc3f7;
+}
+.ln { width: 1.5rem; text-align: right; color: #546e7a; font-size: 0.8rem; user-select: none; }
+.lt { flex: 1; color: #e8f0fe; white-space: pre; }
+.cl-active .lt { color: #fff; }
+.arrow { color: #4fc3f7; font-size: 0.75rem; animation: pulse 0.8s infinite; }
+
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* Controls */
+.ctrls { display: flex; gap: 0.5rem; padding: 0.75rem 1rem; flex-wrap: wrap; }
+.btn {
+  padding: 0.5rem 1rem; border-radius: 10px;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05); color: #c8d6e5;
+  font-weight: 600; font-size: 0.85rem; cursor: pointer;
+  transition: all 0.2s;
+}
+.btn:hover:not(:disabled) { background: rgba(255,255,255,0.1); transform: translateY(-1px); }
+.btn:disabled { opacity: 0.35; cursor: default; }
+.btn.play { border-color: #4fc3f7; color: #4fc3f7; }
+.btn.play:hover:not(:disabled) { background: rgba(79,195,247,0.15); }
+.btn.reset { border-color: #ef5350; color: #ef5350; }
+.btn.reset:hover { background: rgba(239,83,80,0.12); }
+
+/* Scene */
+.scene {
+  position: relative; height: 200px;
+  background: linear-gradient(180deg, #0a1628 0%, #162544 60%, #1b3a2a 100%);
+  overflow: hidden;
+}
+.sky { position: absolute; inset: 0; }
+.star {
+  position: absolute; width: 3px; height: 3px;
+  background: #fff; border-radius: 50%;
+  animation: twinkle 2s infinite ease-in-out;
+}
+@keyframes twinkle { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+.ground {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 40px;
+  background: linear-gradient(0deg, #2e7d32, #388e3c);
+  border-top: 2px solid #43a047;
+}
+
+/* Robot */
+.robo {
+  position: absolute; bottom: 38px; left: 16px;
+  transition: transform 0.5s cubic-bezier(0.4,0,0.2,1);
+  z-index: 2;
+}
+.robot-svg { display: block; }
+.bounce { animation: bob 0.35s ease; }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.glow { filter: drop-shadow(0 0 4px #4fc3f7); }
+.chest { transition: fill 0.3s; }
+.arm-l { animation: wave-l 0.35s ease; }
+.arm-r { animation: wave-r 0.35s ease; }
+@keyframes wave-l { 50% { transform: rotate(-20deg); } }
+@keyframes wave-r { 50% { transform: rotate(20deg); } }
+
+/* Coins */
+.coins-row {
+  position: absolute; bottom: 46px; left: 26px;
+  display: flex; gap: 20px; z-index: 1;
+}
+.coin {
+  transition: all 0.4s ease;
+  filter: drop-shadow(0 0 3px rgba(255,215,0,0.4));
+}
+.coin.got {
+  opacity: 0.25;
+  transform: scale(0.7) translateY(6px);
+  filter: none;
+}
+
+/* Explanation */
+.explain {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: rgba(0,0,0,0.2);
+  font-size: 0.9rem; color: #b0bec5;
+  min-height: 2.5rem;
+}
+.vb {
+  padding: 0.2rem 0.6rem; border-radius: 6px;
+  background: rgba(79,195,247,0.15); color: #4fc3f7;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+/* Output */
+.out {
+  margin: 0; padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem; line-height: 1.6; color: #a5d6a7;
+  min-height: 60px; max-height: 150px; overflow-y: auto;
+}
+.dim { color: #546e7a; }
+
+/* Error */
+.err {
+  margin: 1rem 0; padding: 0.75rem 1rem; border-radius: 10px;
+  background: rgba(239,83,80,0.1); border: 1px solid rgba(239,83,80,0.3);
+  color: #ef5350; font-size: 0.9rem; text-align: center;
+}
+
+/* Challenge */
+.challenge { margin-top: 1.5rem; }
+.cd { padding: 0 1rem; color: #9eafc0; font-size: 0.95rem; margin: 0.5rem 0; }
+.cd code { background: rgba(79,195,247,0.1); color: #4fc3f7; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; }
+.chi { margin: 0.5rem 1rem; width: calc(100% - 2rem); }
+.challenge .btn { margin: 0.5rem 1rem; }
+.cr { padding: 0.5rem 1rem; font-size: 0.95rem; }
+.cr.ok { color: #76ff03; }
+
+/* Footer */
+.foot { text-align: center; padding: 2rem 1rem; color: #546e7a; font-size: 0.8rem; }
