@@ -1,13 +1,21 @@
 import type { MentorRequest } from './types.ts';
 
-export const SYSTEM_PROMPT = `You are ByteBot, an enthusiastic, friendly AI coding mentor for first-year B.Tech students learning Python 'for' loops for the first time.
-Pedagogical rules:
-1. Keep explanations under 120 words. Use simple words and bullet points.
-2. The lesson story is: a cute robot steps forward and collects gold coins in a loop.
-3. NEVER write the complete final code or solve homework directly.
-4. Encourage the student to predict what the loop does before running it.
-5. If giving a hint, provide only the requested hint level (1=concept, 2=guiding question, 3=targeted clue).
-6. Always end with a positive, encouraging one-line action (e.g., "Try testing that in the code editor!").`;
+export const SYSTEM_PROMPT = `You are ByteBot, a warm and encouraging AI coding tutor for absolute beginners and first-year B.Tech students learning Python loops for the very first time.
+
+STORY & ANALOGY RULES:
+1. Analogy: ByteBot is a cute little robot walking on a starry path collecting gold coins.
+2. The loop variable (like 'i') is the "Lap Counter" on ByteBot's chest. It always starts at 0.
+3. The function 'range(N)' is the "Number Dispenser" handing out numbers: 0, 1, 2, ... up to N-1.
+4. The colon ':' is the "Doorway" opening the instructions.
+5. The 2-space indentation means "tucking this action inside ByteBot's backpack so it repeats every lap".
+6. An "iteration" simply means "one complete lap or round through the loop".
+
+TEACHING RULES:
+- Use simple everyday English, short sentences, and friendly tone.
+- Explain terms clearly whenever used (e.g. variable, range, iteration, syntax).
+- Format responses cleanly with Markdown: bold (**text**), inline code (\`code\`), and bullet points (•).
+- NEVER give away the full final solution or do homework directly.
+- Always encourage testing in the editor and pressing Play.`;
 
 export function sanitizeText(text: string, maxLen: number): string {
   if (!text) return '';
@@ -21,14 +29,14 @@ export function buildUserPrompt(req: MentorRequest): string {
 
   switch (req.action) {
     case 'explain':
-      return `Please explain this beginner Python loop line-by-line in simple, friendly terms:
+      return `Please explain this Python loop line-by-line for an absolute beginner:
 \`\`\`python
 ${safeCode}
 \`\`\`
-Explain:
-1. What the for loop line does (how many times it runs).
-2. What happens inside the loop each time.
-3. What the loop variable represents.`;
+Structure your answer into 3 simple sections:
+1. **The Loop Header**: What 'for', the variable name, 'range()', and the colon ':' do.
+2. **Inside the Robot's Backpack**: What happens during each lap (body instructions).
+3. **The Result**: Exactly how many coins ByteBot collects and how the chest counter changes.`;
 
     case 'hint': {
       const level = req.hintLevel || 1;
@@ -36,37 +44,43 @@ Explain:
 \`\`\`python
 ${safeCode}
 \`\`\`
-Give Progressive Hint #${level} of 3:
-- If Level 1: Explain the general concept or goal of range() without code.
-- If Level 2: Ask a thought-provoking guiding question to point them in the right direction.
-- If Level 3: Give a specific clue about the number or line to inspect, without revealing the full answer.
-Current request is strictly for Hint #${level}. Keep it to 2-3 sentences.`;
+Target/Current State: ${exec?.total ?? 'unspecified'} coins target, ${exec?.coinsCollected ?? 0} currently collected.
+
+Provide Progressive Hint #${level} of 3:
+- If Level 1: Story clue about how range() tells ByteBot how many laps to take.
+- If Level 2: A guiding question asking them to compare range(N) with the coin target.
+- If Level 3: A targeted clue pointing out the exact number to adjust, without writing the finished code.
+Strictly output Hint #${level} only, in 2-3 friendly sentences.`;
     }
 
     case 'mistake': {
-      const errorMsg = exec?.error ? `Error/Status: ${exec.error}` : 'Code status: completed or syntax check';
-      const outputMsg = exec?.lastOutput?.length ? `Output was: ${exec.lastOutput.join(', ')}` : 'No output produced';
-      return `The student wrote this code:
+      const errorMsg = exec?.error ? `Interpreter error: ${exec.error}` : 'Code status: completed or check syntax';
+      const outputMsg = exec?.lastOutput?.length ? `Actual output: ${exec.lastOutput.join(', ')}` : 'No output produced';
+      return `The student's code is:
 \`\`\`python
 ${safeCode}
 \`\`\`
 ${errorMsg}
 ${outputMsg}
-Coins collected: ${exec?.coinsCollected ?? 0} out of ${exec?.total ?? 0}
-Explain what might be confusing or mistaken in this code, explain why it happened, and ask a question to help them fix it. Do not just hand them the answer.`;
+Coins collected: ${exec?.coinsCollected ?? 0} out of ${exec?.total ?? 0}.
+
+Diagnose the issue for a beginner:
+1. Point out where the confusion or mistake is (e.g., missing colon, wrong range count, missing indentation).
+2. Explain *why* Python needs it in simple English.
+3. Ask a friendly guiding question to help them fix it themselves.`;
     }
 
     case 'ask':
-      return `The student is learning Python for-loops and asks:
+      return `The student is an absolute beginner learning Python loops and asks:
 "${safeQuestion}"
 
-Their current code is:
+Their current editor code is:
 \`\`\`python
 ${safeCode}
 \`\`\`
-Answer their question clearly, warmly, and concisely for an absolute beginner.`;
+Answer in simple English with a clear analogy, explaining any technical terms used.`;
 
     default:
-      return `Explain this Python code: \n\`\`\`python\n${safeCode}\n\`\`\``;
+      return `Explain this beginner Python code: \n\`\`\`python\n${safeCode}\n\`\`\``;
   }
 }

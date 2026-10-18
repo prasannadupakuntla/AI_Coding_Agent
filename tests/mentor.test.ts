@@ -30,11 +30,12 @@ test('sanitizeText strips control characters and limits length', () => {
   assert.strictEqual(truncated, '12345');
 });
 
-test('buildUserPrompt handles explain, hint, mistake, and ask', () => {
+test('buildUserPrompt incorporates beginner storytelling and analogies', () => {
   const code = 'for i in range(3):\n  collect_coin()';
 
   const explainPrompt = buildUserPrompt({ action: 'explain', code });
-  assert.ok(explainPrompt.includes('line-by-line'));
+  assert.ok(explainPrompt.includes('Loop Header'));
+  assert.ok(explainPrompt.includes('Backpack'));
 
   const hint1 = buildUserPrompt({ action: 'hint', code, hintLevel: 1 });
   assert.ok(hint1.includes('Hint #1'));
@@ -57,18 +58,90 @@ test('buildUserPrompt handles explain, hint, mistake, and ask', () => {
   assert.ok(askPrompt.includes('Why does range start at 0?'));
 });
 
-test('OfflineFallbackProvider provides beginner-friendly responses without API key', () => {
+test('OfflineFallbackProvider explains code using beginner analogies', () => {
+  const code = 'for i in range(4):\n  collect_coin()\n  print(i)';
+  const explain = OfflineFallbackProvider.getResponse({ action: 'explain', code });
+
+  // Checks for terms and analogies
+  assert.ok(explain.includes('Lap Counter Badge'));
+  assert.ok(explain.includes('Number Dispenser'));
+  assert.ok(explain.includes('Doorway'));
+  assert.ok(explain.includes('**4 laps**'));
+  assert.ok(explain.includes('**4 coins**'));
+});
+
+test('OfflineFallbackProvider handles empty code honestly', () => {
+  const emptyRes = OfflineFallbackProvider.getResponse({ action: 'explain', code: '' });
+  assert.ok(emptyRes.includes('code editor is currently empty'));
+  assert.ok(emptyRes.includes('for i in range(5):'));
+});
+
+test('OfflineFallbackProvider delivers 3 progressive hint levels', () => {
   const code = 'for i in range(5):\n  collect_coin()';
 
-  const explain = OfflineFallbackProvider.getResponse({ action: 'explain', code });
-  assert.ok(explain.includes('range(5)'));
-  assert.ok(explain.includes('collect_coin()'));
+  const hint1 = OfflineFallbackProvider.getResponse({ action: 'hint', code, hintLevel: 1 });
+  assert.ok(hint1.includes('Hint 1 of 3'));
+  assert.ok(hint1.includes('Concept & Story'));
 
-  const hint = OfflineFallbackProvider.getResponse({ action: 'hint', code, hintLevel: 2 });
-  assert.ok(hint.includes('Hint 2'));
+  const hint2 = OfflineFallbackProvider.getResponse({ action: 'hint', code, hintLevel: 2 });
+  assert.ok(hint2.includes('Hint 2 of 3'));
+  assert.ok(hint2.includes('Guiding Question'));
 
-  const mistake = OfflineFallbackProvider.getResponse({ action: 'mistake', code: 'while True:' });
-  assert.ok(mistake.includes('Missing loop declaration'));
+  const hint3 = OfflineFallbackProvider.getResponse({ action: 'hint', code, hintLevel: 3 });
+  assert.ok(hint3.includes('Hint 3 of 3'));
+  assert.ok(hint3.includes('range(3)'));
+});
+
+test('OfflineFallbackProvider accurately diagnoses common beginner mistakes', () => {
+  // Missing colon
+  const colonErr = OfflineFallbackProvider.getResponse({ action: 'mistake', code: 'for i in range(5)' });
+  assert.ok(colonErr.includes('Missing Colon'));
+
+  // Missing for keyword
+  const forErr = OfflineFallbackProvider.getResponse({ action: 'mistake', code: 'loop i in 5:' });
+  assert.ok(forErr.includes("Missing 'for' Keyword"));
+
+  // Number too large (> 20)
+  const largeErr = OfflineFallbackProvider.getResponse({ action: 'mistake', code: 'for i in range(50):\n  collect_coin()' });
+  assert.ok(largeErr.includes('Number Too Large'));
+
+  // range(0) zero laps warning
+  const zeroErr = OfflineFallbackProvider.getResponse({ action: 'mistake', code: 'for i in range(0):\n  collect_coin()' });
+  assert.ok(zeroErr.includes('range(0) Means Zero Laps'));
+});
+
+test('OfflineFallbackProvider answers common beginner conceptual questions', () => {
+  // Why start at 0
+  const qZero = OfflineFallbackProvider.getResponse({
+    action: 'ask',
+    code: 'for i in range(5):',
+    studentQuestion: 'Why does range(5) stop at 4?',
+  });
+  assert.ok(qZero.includes('counting starts at 0') || qZero.includes('starts at `0`'));
+
+  // What is i
+  const qVar = OfflineFallbackProvider.getResponse({
+    action: 'ask',
+    code: 'for i in range(5):',
+    studentQuestion: "What is the letter 'i'?",
+  });
+  assert.ok(qVar.includes('Lap Counter Badge'));
+
+  // What is iteration
+  const qIter = OfflineFallbackProvider.getResponse({
+    action: 'ask',
+    code: 'for i in range(5):',
+    studentQuestion: 'What is an iteration in plain English?',
+  });
+  assert.ok(qIter.includes('One complete lap through the loop'));
+
+  // Indentation
+  const qIndent = OfflineFallbackProvider.getResponse({
+    action: 'ask',
+    code: 'for i in range(5):',
+    studentQuestion: 'Why does indentation matter?',
+  });
+  assert.ok(qIndent.includes("robot's backpack"));
 });
 
 test('getProvider returns corresponding adapter', () => {
@@ -80,15 +153,12 @@ test('getProvider returns corresponding adapter', () => {
 });
 
 test('handleMentorRequest validates payload structure and limits', async () => {
-  // Empty body
   const emptyRes = await handleMentorRequest(null, '127.0.0.1');
   assert.strictEqual(emptyRes.status, 400);
 
-  // Invalid action
-  const badActionRes = await handleMentorRequest({ action: 'hack', code: '' }, '127.0.0.1');
+  const badActionRes = await handleMentorRequest({ action: 'eval_code', code: '' }, '127.0.0.1');
   assert.strictEqual(badActionRes.status, 400);
 
-  // Excessively long code
   const longCode = 'a'.repeat(1500);
   const longRes = await handleMentorRequest({ action: 'explain', code: longCode }, '127.0.0.1');
   assert.strictEqual(longRes.status, 400);

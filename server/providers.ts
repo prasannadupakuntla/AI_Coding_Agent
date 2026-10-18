@@ -9,10 +9,9 @@ export interface AIProvider {
 
 /**
  * Google AI Studio (Gemini) Provider
- * Uses Gemini REST API with minimal token generation config.
  */
 export class GoogleAIProvider implements AIProvider {
-  name = 'Google AI Studio (Gemini)';
+  name = 'Google AI Studio (Gemini 1.5 Flash)';
   type: AIProviderType = 'google';
   private model: string;
 
@@ -37,7 +36,7 @@ export class GoogleAIProvider implements AIProvider {
           systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
           generationConfig: {
             temperature: 0.3,
-            maxOutputTokens: 300,
+            maxOutputTokens: 350,
           },
         }),
       });
@@ -64,10 +63,9 @@ export class GoogleAIProvider implements AIProvider {
 
 /**
  * OpenRouter Provider
- * Uses OpenRouter Chat Completions REST API.
  */
 export class OpenRouterProvider implements AIProvider {
-  name = 'OpenRouter';
+  name = 'OpenRouter (Free Tier)';
   type: AIProviderType = 'openrouter';
   private model: string;
 
@@ -98,7 +96,7 @@ export class OpenRouterProvider implements AIProvider {
             { role: 'system', content: SYSTEM_PROMPT },
             { role: 'user', content: userPrompt },
           ],
-          max_tokens: 300,
+          max_tokens: 350,
           temperature: 0.3,
         }),
       });
@@ -125,67 +123,203 @@ export class OpenRouterProvider implements AIProvider {
 
 /**
  * Offline Fallback Provider
- * Ensures the app and mentor always give high-value, educational assistance
- * even when no API key is configured or when offline.
+ * Grounded in the editor code and execution state with beginner storytelling.
  */
 export class OfflineFallbackProvider {
   static getResponse(req: MentorRequest): string {
-    const code = req.code.trim();
+    const code = (req.code || '').trim();
+    const exec = req.executionState;
 
-    if (req.action === 'explain') {
-      const match = code.match(/for\s+(\w+)\s+in\s+range\((\d+)\)/);
-      if (match) {
-        const [, v, n] = match;
-        return `🤖 **ByteBot's Code Breakdown:**
-• **Line 1 (\`for ${v} in range(${n}):\`)**: Starts a repeating loop. The variable \`${v}\` starts at 0 and goes up to ${Number(n) - 1} (total ${n} turns).
-• **Inside the loop**: Every indented line runs once per turn. If it calls \`collect_coin()\`, the robot takes a step and grabs 1 coin.
-• **Result**: The loop will run exactly **${n} times** and collect **${n} coins**!
-
-💡 *Try changing \`range(${n})\` to a different number to see the robot move!*`;
-      }
-      return `🤖 **How For Loops Work:**
-• \`for i in range(N):\`: Repeats everything indented underneath it $N$ times.
-• The variable \`i\` takes values 0, 1, 2, ... up to $N-1$.
-• Try pressing **▶ Play** or **⏭ Step** to watch \`i\` change on each step!`;
+    // Handle empty code honestly
+    if (!code) {
+      return `### 🤖 ByteBot is Ready!
+Your code editor is currently empty.
+• Start by giving ByteBot a loop command:
+\`\`\`python
+for i in range(5):
+  collect_coin()
+\`\`\`
+• **Why?** A \`for\` loop tells ByteBot how many laps to run!`;
     }
 
+    // 1. EXPLAIN CODE
+    if (req.action === 'explain') {
+      const match = code.match(/for\s+(\w+)\s+in\s+range\((\d+)\)\s*:/);
+      if (match) {
+        const [, varName, countStr] = match;
+        const count = parseInt(countStr, 10);
+        const hasCoin = code.includes('collect_coin()');
+        const hasPrint = code.includes('print(');
+
+        return `### 🤖 ByteBot's Friendly Code Breakdown
+
+1. **The Loop Header: \`for ${varName} in range(${count}):\`**
+• **\`for\`**: The command telling Python to repeat an action.
+• **\`${varName}\` (Loop Variable)**: The **Lap Counter Badge** on ByteBot's chest. It starts at \`0\` and increases by 1 on every lap.
+• **\`range(${count})\` (Number Dispenser)**: Hands out ${count} numbers: \`0, 1, ... up to ${count > 0 ? count - 1 : 0}\`.
+• **\`:\` (Colon)**: The **Doorway** that opens the instructions for the robot.
+
+2. **Inside ByteBot's Backpack (The Loop Body):**
+• Each indented line runs once per lap (each lap is called an **iteration**).
+${hasCoin ? `• **\`collect_coin()\`**: ByteBot steps forward and picks up **1 gold coin** each lap.\n` : ''}${hasPrint ? `• **\`print(...)\`**: Displays the lap number on your screen.\n` : ''}
+3. **The Result:**
+• ByteBot will complete **${count} laps** and collect **${hasCoin ? count : 0} coins**.
+• The chest counter \`${varName}\` will count: \`${Array.from({ length: Math.min(count, 5) }, (_, i) => i).join(', ')}${count > 5 ? '...' : ''}\`.
+
+💡 *Press **▶ Play** to watch the robot make these exact steps!*`;
+      }
+
+      // If code doesn't match the valid loop pattern
+      if (!code.includes(':')) {
+        return `### ⚠️ Notice: Missing Colon!
+Your loop is missing the colon \`:\` at the end of the first line.
+• **What it means:** In Python, the colon \`:\` tells the computer: *"Open the door, here are the steps to repeat!"*
+• **Fix:** Add a colon to the end of the line, like: \`for i in range(5):\``;
+      }
+
+      return `### 🤖 How a Python 'for' Loop Works
+• **The Story**: Imagine ByteBot running laps around a track.
+• **\`for i in range(N):\`**: Sets up $N$ laps.
+• **The Variable \`i\`**: A tiny counter on ByteBot's chest displaying \`0, 1, 2, ... N-1\`.
+• **Indentation**: Any line with 2 spaces belongs inside the robot's backpack and runs on every lap!`;
+    }
+
+    // 2. GIVE ME A HINT (Progressive)
     if (req.action === 'hint') {
       const level = req.hintLevel || 1;
+
       if (level === 1) {
-        return `🧭 **Hint 1 (Concept):** 
-In Python, \`range(N)\` controls how many times the loop repeats. Notice that counting starts at 0, not 1!`;
+        return `### 🧭 Hint 1 of 3: The Concept & Story
+ByteBot needs to know how many laps to take around the coin track.
+• The function **\`range(N)\`** is your **Lap Dispenser**.
+• Whatever number you put inside the parentheses \`range(...)\` is how many times the loop will repeat!`;
       }
+
       if (level === 2) {
-        return `🧭 **Hint 2 (Guiding Question):** 
-Look at the challenge goal. If the challenge asks for 3 coins, how many times does the loop body need to repeat?`;
+        return `### 🧭 Hint 2 of 3: Guiding Question
+Look at the goal. If you want ByteBot to collect **3 coins**, and each lap collects **1 coin**:
+• How many total laps does ByteBot need to run?
+• What number should you place inside \`range(?)\`?`;
       }
-      return `🧭 **Hint 3 (Specific Clue):** 
-Replace the blank with the exact target number: \`range(3)\` will run the loop 3 times for \`i = 0, 1, 2\`!`;
+
+      return `### 🧭 Hint 3 of 3: Targeted Clue
+Replace the blank with the exact target number:
+• Write **\`range(3)\`**!
+• In Python, \`range(3)\` runs for \`i = 0\`, \`i = 1\`, and \`i = 2\` — that is exactly 3 laps and 3 coins!`;
     }
 
+    // 3. FIND MY MISTAKE
     if (req.action === 'mistake') {
-      if (!code.includes('for')) {
-        return `🔍 **Mistake Found:** Missing loop declaration!
-A Python for loop must start with: \`for <variable> in range(N):\`. Don't forget the colon \`:\` at the end of the line!`;
+      if (!code.startsWith('for')) {
+        return `### 🔍 Mistake Found: Missing 'for' Keyword
+Python doesn't know you want to repeat actions yet!
+• **Fix**: Start your code with \`for i in range(N):\`.
+• **Why?** \`for\` is the magic keyword that turns on ByteBot's repetition engine.`;
       }
+
       if (!code.includes(':')) {
-        return `🔍 **Mistake Found:** Syntax error!
-Python requires a colon \`:\` at the end of the \`for\` loop line. Example: \`for i in range(5):\``;
+        return `### 🔍 Mistake Found: Missing Colon (\`:\`)
+Python stopped because line 1 is missing a colon \`:\` at the end!
+• **Example**: Write \`for i in range(5):\` instead of \`for i in range(5)\`.
+• **Why?** The colon tells Python that the instructions inside the loop are about to begin.`;
       }
-      if (req.executionState?.error) {
-        return `🔍 **Execution Issue:**
-The interpreter noticed: *"${req.executionState.error}"*. Check your syntax and make sure all lines inside the loop are indented.`;
+
+      if (code.includes('range()')) {
+        return `### 🔍 Mistake Found: Empty range()
+The number dispenser \`range()\` is empty!
+• **Fix**: Put a number inside, like \`range(3)\` or \`range(5)\`.
+• **Why?** ByteBot needs to know how many laps to run!`;
       }
-      return `🔍 **Code Inspection:**
-Your loop syntax looks valid! Check the coin counter: if you collected fewer or more coins than you wanted, check the number inside \`range(N)\`.`;
+
+      const matchNum = code.match(/range\((\d+)\)/);
+      if (matchNum) {
+        const n = parseInt(matchNum[1], 10);
+        if (n > 20) {
+          return `### 🔍 Mistake Found: Number Too Large
+You entered \`range(${n})\`.
+• ByteBot's coin track only has space for **20 coins**!
+• Try a number between \`1\` and \`10\` so you can see all the coins clearly.`;
+        }
+        if (n === 0) {
+          return `### 🔍 Notice: range(0) Means Zero Laps!
+You wrote \`range(0)\`.
+• Because the count is 0, the loop ends immediately without taking a single step or collecting any coins!
+• If you want coins, change \`0\` to a positive number like \`3\` or \`5\`.`;
+        }
+      }
+
+      if (exec?.error) {
+        return `### 🔍 Interpreter Error Detected
+The robot reported: **"${exec.error}"**
+• Make sure every instruction inside the loop is indented with 2 spaces!
+• Supported commands in this lesson: \`collect_coin()\` and \`print(i)\`.`;
+      }
+
+      return `### 🔍 Code Inspection: All Good!
+Your Python syntax is valid!
+• ByteBot is ready to run. Press **▶ Play** to watch the coins get collected, or **⏭ Step** to observe line-by-line!`;
     }
 
-    // Default 'ask'
-    return `🤖 **ByteBot Answer:**
-In Python, \`for i in range(N)\` is a counter loop. It tells the computer: "Do the following tasks $N$ times, and keep track of which turn we're on using the variable $i$."
-Each turn is called an **iteration**.
+    // 4. ASK AI (Knowledge base & analogies)
+    const q = (req.studentQuestion || '').toLowerCase();
 
-*(Note: Connect a free Google AI Studio or OpenRouter key in Settings for live AI answers!)*`;
+    if (q.includes('stop at 4') || q.includes('start at 0') || q.includes('why 0') || q.includes('why does range')) {
+      return `### 🤖 Why Does \`range(5)\` Stop at 4?
+Great question! This confuses almost every beginner at first.
+
+• **In computer science, counting starts at \`0\`**, not \`1\`.
+• When you ask for 5 numbers, Python dispenses:
+  1. \`0\` (first)
+  2. \`1\` (second)
+  3. \`2\` (third)
+  4. \`3\` (fourth)
+  5. \`4\` (fifth)
+• Count them up on your fingers: that is **5 numbers total**!
+• So \`range(N)\` gives you $N$ turns, starting from $0$ up to $N - 1$.`;
+    }
+
+    if (q.includes('what is i') || q.includes('letter') || q.includes('variable') || q.includes('what does i') || q.includes("what is 'i'") || q.includes('what is "i"')) {
+      return `### 🤖 What is the Letter \`i\`?
+Think of \`i\` as a **Lap Counter Badge** on ByteBot's chest!
+
+• \`i\` stands for **"index"** or **"iteration"**.
+• On lap 1, the badge shows: \`i = 0\`.
+• On lap 2, the badge updates to: \`i = 1\`.
+• You can even rename it! \`for lap in range(5):\` works identically. \`i\` is just the friendly convention programmers use.`;
+    }
+
+    if (q.includes('iteration') || q.includes('what is an iteration')) {
+      return `### 🤖 What Does "Iteration" Mean?
+**Iteration** is just a fancy computer science word for:
+> **"One complete lap through the loop."**
+
+If your loop runs 5 times:
+• Round 1 is the 1st iteration (\`i = 0\`).
+• Round 5 is the 5th iteration (\`i = 4\`).
+Each time ByteBot takes a step and grabs a coin, that is one iteration!`;
+    }
+
+    if (q.includes('indent') || q.includes('space') || q.includes('indentation')) {
+      return `### 🤖 Why Does Indentation (Spacing) Matter?
+In Python, **spaces are the robot's backpack!**
+
+• Lines with 2 spaces indented under \`for\` belong **inside the loop**:
+\`\`\`python
+for i in range(3):
+  collect_coin()  # <-- Inside! Repeats 3 times
+print("Done")     # <-- Outside! Runs only once at the end
+\`\`\`
+• Without indentation, Python doesn't know which lines to repeat!`;
+    }
+
+    // Default friendly answer
+    return `### 🤖 ByteBot Tutor
+In Python, a **\`for\` loop** lets you repeat actions without copy-pasting code!
+• **\`for i in range(5):\`**: Tells the robot to do 5 laps.
+• **\`collect_coin()\`**: The action to repeat each lap.
+• **Predict**: Before pressing **▶ Play**, try guessing what number will appear on ByteBot's chest at each step!
+
+*(💡 Tip: You can configure a free Google AI Studio or OpenRouter key in Settings for unlimited live AI conversations!)*`;
   }
 }
 

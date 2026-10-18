@@ -187,6 +187,7 @@ export default function App() {
           lastOutput: outputs,
           error: parsed.error,
         }}
+        onPlayRequest={play}
       />
 
       {/* ── Challenge ── */}
