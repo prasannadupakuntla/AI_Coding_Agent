@@ -33,8 +33,9 @@ for i in range(5):
 
 ## ✨ Core Features
 
-| Feature | Description |
-| :--- | :--- |
+| **🤖 ByteBot AI Mentor** | Beginner tutor with **Explain Code**, **Progressive Hints (1-3)**, **Find My Mistake**, and **Ask AI** (Socratic, never replaces code). |
+| **🛡️ Modular AI Adapters** | Plug-and-play adapter for **Google AI Studio (Gemini)** and **OpenRouter**, with safe zero-key offline tutor fallback. |
+| **⚡ Server Safeguards** | Sliding-window IP rate limiting (15 req/min), timeouts, prompt sanitization, input size validation, and minimal token usage. |
 | **🎮 Stepper & Playback** | Full control: **Play**, **Pause**, **Step Forward**, and **Reset** to inspect code at your own pace. |
 | **🤖 Custom SVG Robot** | Fluid SVG animations with arm-waves, antenna glow, and coin grab animations—no generic emojis or heavy external assets. |
 | **🎯 Interactive Challenges** | Built-in mission system (e.g. *"Edit the code to collect exactly 3 coins"*) with instant feedback. |
@@ -94,11 +95,22 @@ npm run dev
 ```
 Open your browser and navigate to `http://localhost:5173` (or the port shown in your terminal).
 
-### 4. Build for production
+### 4. Run test suites
+```bash
+npm test
+```
+Executes native unit tests for the deterministic parser, rate limiter, prompt builders, and AI adapters.
+
+### 5. Build for production
 ```bash
 npm run build
 ```
 The compiled, optimized production assets will be generated in the `dist/` directory.
+
+### 🔑 (Optional) AI Mentor Configuration
+By default, the AI Mentor operates in **Offline Mode** with instant, zero-cost pedagogical guidance. To enable live models:
+- Set environment variables: `GEMINI_API_KEY=your_key` or `OPENROUTER_API_KEY=your_key`
+- Or enter your free key directly in the UI Settings drawer (stored only in browser session memory).
 
 ---
 
