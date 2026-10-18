@@ -33,7 +33,8 @@ for i in range(5):
 
 ## ✨ Core Features
 
-| **🤖 ByteBot AI Mentor** | Beginner tutor with **Explain Code**, **Progressive Hints (1-3)**, **Find My Mistake**, and **Ask AI** (Socratic, never replaces code). |
+| **🔬 Python Tutor Visualizer** | Interactive execution trace showing call stack frames, variables, heap objects/pointers, and current (green ▶) / next (red ▷) line arrows with timeline scrubber and navigation (First/Prev/Next/Last/Auto). |
+| **🤖 ByteBot AI Mentor** | Beginner tutor with **Explain Code**, **Progressive Hints (1-3)**, **Find My Mistake**, **Ask AI**, and **Predict & Test** quiz (Socratic, never replaces code). |
 | **🛡️ Modular AI Adapters** | Plug-and-play adapter for **Google AI Studio (Gemini)** and **OpenRouter**, with safe zero-key offline tutor fallback. |
 | **⚡ Server Safeguards** | Sliding-window IP rate limiting (15 req/min), timeouts, prompt sanitization, input size validation, and minimal token usage. |
 | **🎮 Stepper & Playback** | Full control: **Play**, **Pause**, **Step Forward**, and **Reset** to inspect code at your own pace. |

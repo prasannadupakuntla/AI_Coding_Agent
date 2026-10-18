@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 import { safeParse, type ExecStep, type ParseResult } from './interpreter.ts';
+import { traceExecution, type TraceResult } from './traceEngine.ts';
 import { AIMentor } from './components/AIMentor.tsx';
+import { ExecutionVisualizer } from './components/ExecutionVisualizer.tsx';
 
 /* ─── SVG Robot ─── */
 
@@ -34,6 +36,10 @@ export default function App() {
   const DEFAULT = 'for i in range(5):\n  collect_coin()\n  print(i)';
   const [code, setCode] = useState(DEFAULT);
   const [parsed, setParsed] = useState<ParseResult>(() => safeParse(DEFAULT));
+  const [trace, setTrace] = useState<TraceResult>(() => traceExecution(DEFAULT));
+  const [traceStepIdx, setTraceStepIdx] = useState<number>(0);
+  const [showVisualizer, setShowVisualizer] = useState<boolean>(true);
+
   const [si, setSi] = useState(-1);          // step index, -1 = idle
   const [playing, setPlaying] = useState(false);
   const [outputs, setOutputs] = useState<string[]>([]);
@@ -44,12 +50,25 @@ export default function App() {
   const [chCode, setChCode] = useState('for i in range(__):\n  collect_coin()');
   const [chResult, setChResult] = useState<string | null>(null);
 
-  useEffect(() => { setParsed(safeParse(code)); doReset(); }, [code]);
+  useEffect(() => {
+    setParsed(safeParse(code));
+    const newTrace = traceExecution(code);
+    setTrace(newTrace);
+    setTraceStepIdx(0);
+    doReset();
+  }, [code]);
 
   const cur = parsed.steps && si >= 0 && si < parsed.steps.length ? parsed.steps[si] : null;
 
   const clearT = () => { if (timer.current !== null) { clearInterval(timer.current); timer.current = null; } };
-  const doReset = useCallback(() => { clearT(); setSi(-1); setPlaying(false); setOutputs([]); setCoins(0); }, []);
+  const doReset = useCallback(() => {
+    clearT();
+    setSi(-1);
+    setPlaying(false);
+    setOutputs([]);
+    setCoins(0);
+    setTraceStepIdx(0);
+  }, []);
   useEffect(() => () => clearT(), []);
 
   const execStep = (step: ExecStep) => {
@@ -82,6 +101,19 @@ export default function App() {
     if (playing) pause();
     if (si === -1) { setSi(0); execStep(parsed.steps[0]); }
     else advance();
+  };
+
+  // Synchronize trace step index with animation and coins
+  const handleTraceStepChange = (newIdx: number | ((prev: number) => number)) => {
+    setTraceStepIdx(prevIdx => {
+      const targetIdx = typeof newIdx === 'function' ? newIdx(prevIdx) : newIdx;
+      if (trace.ok && trace.steps[targetIdx]) {
+        const stepData = trace.steps[targetIdx];
+        setCoins(stepData.robotState.coins);
+        setOutputs(stepData.stdout);
+      }
+      return targetIdx;
+    });
   };
 
   const totalCoins = parsed.total ?? 0;
@@ -176,6 +208,26 @@ export default function App() {
 
       {!parsed.ok && <div className="err">⚠️ {parsed.error}</div>}
 
+      {/* ── Python Tutor Execution Visualizer ── */}
+      <div className="visualizer-toggle-wrapper">
+        <button
+          className={`btn-visualizer-toggle ${showVisualizer ? 'active' : ''}`}
+          onClick={() => setShowVisualizer(v => !v)}
+        >
+          🔬 {showVisualizer ? 'Hide Python Tutor Visualizer' : 'Show Python Tutor Visualizer (Frames & Objects)'}
+        </button>
+      </div>
+
+      {showVisualizer && (
+        <ExecutionVisualizer
+          codeLines={trace.codeLines}
+          steps={trace.steps}
+          currentStepIndex={traceStepIdx}
+          onStepChange={handleTraceStepChange}
+          error={trace.error}
+        />
+      )}
+
       {/* ── AI Learning Mentor ── */}
       <AIMentor
         code={code}
@@ -203,7 +255,7 @@ export default function App() {
         {chResult && <p className={`cr${chResult.startsWith('🎉') ? ' ok' : ''}`}>{chResult}</p>}
       </section>
 
-      <footer className="foot">Built for B.Tech beginners · AI Powered · No login · 100% free &amp; open-source</footer>
+      <footer className="foot">Built for B.Tech beginners · AI Powered · Python Tutor Visualizer · 100% free &amp; open-source</footer>
     </div>
   );
 }
